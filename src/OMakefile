@@ -1,0 +1,73 @@
+.DEFAULT: lib
+.PHONY: clean distclean doc lib
+
+CC= $(OCAMLC_CC)
+CFLAGS= $(OCAMLC_CC_CFLAGS) $(CFLAGS) -I$(UWT_DIR)
+if $(equal $(OSTYPE), Win32)
+	export
+	if $(or $(equal $(OCAMLC_SYSTEM),win32), $(equal $(OCAMLC_SYSTEM),win64))
+		export
+		LDFLAGS+=Advapi32.lib
+	else
+		export
+		LDFLAGS+=-ladvapi32
+
+if $(equal $(OSTYPE),Win32)
+	configure config.h.in: configure.ac
+		if $(or $(not $(file-exists configure)),$(not $(file-exists config.h.in)))
+			bash.exe autoreconf -fi
+		else
+			touch configure config.h.in
+	config.h: config.h.in configure
+		bash.exe configure CC="$(OCAMLC_CC)" CFLAGS="$(CFLAGS)"
+else
+	configure config.h.in: configure.ac
+		if $(or $(not $(file-exists configure)),$(not $(file-exists config.h.in)))
+			autoreconf -fi
+		else
+			touch configure config.h.in
+	config.h: config.h.in configure
+		./configure CC="$(OCAMLC_CC)" CFLAGS="$(CFLAGS)"
+
+clean::
+	rm -f config.log config.status
+
+distclean::
+	rm -f config.h *~ configure
+	rm -rf autom4te.cache
+
+section
+	.SCANNER: scan-c-%: config.h
+	MLFILES=uwt_random
+	CFILES=uwt_random_stubs
+	CFLAGS+=$(CFLAGS_LIBUV)
+	UWTRANDOM=$(MixedLibrary $(PROJNAME), $(MLFILES), $(CFILES))
+	lib:: $(UWTRANDOM)
+	export UWTRANDOM
+
+ENTROPY=
+DOC_LIBS= uwt
+if $(equal $(HAVE_NOCRYPTO), true)
+	export ENTROPY DOC_LIBS
+	section
+		export ENTROPY DOC_LIBS
+		OCAMLPACKS+= nocrypto cstruct
+		DOC_LIBS+= nocrypto
+		MLFILES=nocrypto_entropy_uwt
+		OCAML_LIBS+= $(PROJNAME)
+		Repeat_targets($(MLFILES))
+		ENTROPY+=$(MOCamlLibrary nocrypto-entropy-uwt, $(MLFILES))
+		lib:: $(ENTROPY)
+
+Install_helper($(PROJNAME),$(UWTRANDOM) $(ENTROPY), $(EMPTY))
+
+section
+	OCAMLPACKS+= $(DOC_LIBS)
+	x=$(CreateDoc uwt-random,html,$(UWTRANDOM) $(ENTROPY))
+
+clean::
+	clean-helper()
+	rm -f oUnit*.log setup.data setup.log *.tar*
+
+distclean:: clean
+	rm -f *~ .*~ setup.ml _oasis *.xz *.gz

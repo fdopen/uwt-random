@@ -1,0 +1,30 @@
+opam-version: "1.2"
+name: "uwt-random"
+version: "0.0.1"
+maintainer: "andreashauptmann@t-online.de"
+authors: [ "andreashauptmann@t-online.de" ]
+homepage: "https://github.com/fdopen/uwt-random"
+dev-repo: "https://github.com/fdopen/uwt-random.git"
+bug-reports: "https://github.com/fdopen/uwt-random/issues"
+build: [["omake" "lib"]]
+install: [["omake" "install"]]
+build-test: [["omake" "test"]]
+remove: [
+  ["ocamlfind" "remove" "uwt-random"]
+]
+available: [ocaml-version >= "4.02.1"]
+depends: [
+  "ocamlfind" {build}
+  "omake" {build}
+  "conf-pkg-config" {build}
+  "cstruct"
+  "lwt"
+  "uwt" { > "0.0.2"}
+  "ounit" {test & >= "2.0"}
+]
+depopts: [
+  "nocrypto"
+]
+conflicts: [
+  "nocrypto"  {<"0.5.3" & >= "0.6"}
+]

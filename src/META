@@ -1,0 +1,19 @@
+version = "0.0.1"
+description = "bindings to os dependent random number sources"
+requires = "uwt.ext"
+archive(byte) = "uwt-random.cma"
+archive(byte, plugin) = "uwt-random.cma"
+archive(native) = "uwt-random.cmxa"
+archive(native, plugin) = "uwt-random.cmxs"
+exists_if = "uwt-random.cma"
+
+package "nocrypto-entropy" (
+ version = "0.0.1"
+ description = "helpers to attach uwt-random to the nocrypto rng"
+ requires = "uwt-random cstruct nocrypto"
+ archive(byte) = "nocrypto-entropy-uwt.cma"
+ archive(byte, plugin) = "nocrypto-entropy-uwt.cma"
+ archive(native) = "nocrypto-entropy-uwt.cmxa"
+ archive(native, plugin) = "nocrypto-entropy-uwt.cmxs"
+ exists_if = "nocrypto-entropy-uwt.cma"
+)

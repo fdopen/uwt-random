@@ -1,0 +1,9 @@
+PRJ uwt-random
+PKG uwt
+PKG cstruct
+PKG nocrypto
+PKG oUnit
+S src
+S test
+B src
+B test

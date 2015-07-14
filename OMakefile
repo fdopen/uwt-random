@@ -1,0 +1,60 @@
+.PHONY: clean all distclean install uninstall lib #test
+
+VERSION=0.0.1
+PROJNAME= uwt-random
+USE_OCAMLFIND= true
+BYTE_ENABLED=	true
+OCAMLPACKS+= uwt
+
+include OMakeIncludes
+include OMakeCFLAGS
+
+static.=
+	PATH_PKG_CONFIG=$(Check_prog_in_path pkg-config)
+	if $(equal $(PATH_PKG_CONFIG), false)
+		PATH_PKG_CONFIG=$(Check_prog_in_path pkgconf)
+		export
+	UWT_DIR=$(shella $(OCAMLFIND) query uwt)
+	x=$(pkg_config LIBUV,libuv)
+	x=
+		if $(not $(x))
+			value false
+		else
+			value $(pkg_config_between_vers LIBUV,libuv,1.0,2.0)
+	if $(equal $(x),false)
+		export
+		if $(file-exists $"$(UWT_DIR)/uv.h")
+			export
+			CFLAGS_LIBUV=-I$(UWT_DIR)
+		else
+			$(ConfMsgError $''libuv missing'')
+	HAVE_NOCRYPTO=
+		t=$(shell-code $(OCAMLFIND) query nocrypto >$(NULL_DEVICE))
+		value $(if $(equal $(t),0), true, false)
+	if $(not $(equal $(getenv DEBUG_MY_CODE, $(EMPTY)), $(EMPTY)))
+		export
+		OCAMLFLAGS= -g -bin-annot -safe-string -w A-4-37 #-32-33-37-39-48-4 -warn-error A-32-33-37-39-48-4
+		CFLAGS= $(DEVCFLAGS)
+	else
+		export
+		OCAMLFLAGS= -g -bin-annot -safe-string
+		CFLAGS= -O2 -g
+	export OCAMLFLAGS CFLAGS UWT_DIR HAVE_NOCRYPTO CFLAGS_LIBUV
+
+.DEFAULT: lib 
+.SUBDIRS: src test
+
+all:: lib
+
+clean::
+	clean-helper()
+	rm -f oUnit*.log setup.data setup.log
+
+distclean:: clean
+	rm -f *~ .*~ setup.ml _oasis *.xz *.gz
+
+.PHONY: echo-pkg
+echo-pkg:
+	@echo $(PROJNAME)-$(VERSION)
+
+.DEFAULT: all

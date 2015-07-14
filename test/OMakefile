@@ -1,0 +1,36 @@
+.PHONY: test clean distclean build-tests btest all
+.DEFAULT: build-tests
+
+OCAMLINCLUDES[]+= ../src
+OCAML_LIBS+= ../src/uwt-random
+OCAMLPACKS+= uwt.ext oUnit
+
+testprog(FILES,run)=
+	PROG=$(nth 0, $(FILES))
+	Repeat_targets($(FILES))
+	$(PROG).opt: ../src/uwt-random.cmxa ../src/libuwt-random$(EXT_LIB)
+	$(PROG).run: ../src/uwt-random.cma ../src/libuwt-random$(EXT_LIB)
+	TEST_PROG=$(OCamlProgram $(PROG),$(FILES))
+	build-tests:: $(TEST_PROG)
+	clean::
+		rm -f $(PROG)$(EXE)
+	if $(equal $(run),true)
+		test:: $(PROG)$(EXE) $(TEST_PROG)
+			./$(PROG)$(EXE)
+		btest:: $(PROG) $(TEST_PROG)
+			./$(PROG).run
+
+section
+	FILES_RUN= otest
+	foreach(f,$(FILES_RUN))
+		testprog($(f),true)
+
+clean::
+	clean-helper()
+	rm -f *.tar* *.cache *.log *.data
+	rm -rf _tests
+
+distclean:: clean
+	rm -f *~ .*~
+
+all:: build-tests
