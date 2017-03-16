@@ -250,7 +250,7 @@ linux_sysctl(unsigned char *buf, size_t len)
 }
 #endif /* defined(__linux__) && defined(SYS__sysctl) */
 
-#if (defined(__FreeBSD__) || defined(__NetBSD__)) && (defined(CTL_KERN) && defined(KERN_ARND))
+#if (defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__NetBSD__)) && (defined(CTL_KERN) && defined(KERN_ARND))
 static int
 bsd_sysctl(unsigned char *buf, size_t size)
 {
@@ -324,7 +324,7 @@ uwt_random_get(value tok, value obytes, value oofset, value olen)
 #endif
 #elif defined(__OpenBSD__) && defined(HAVE_GETENTROPY)
       r = bsd_sysctl(cstr,len);
-#elif (defined(__FreeBSD__) || defined(__NetBSD__)) && (defined(CTL_KERN) && defined(KERN_ARND))
+#elif (defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__NetBSD__)) && (defined(CTL_KERN) && defined(KERN_ARND))
       r = bsd_sysctl(cstr,len);
 #else
       DEBUG_PF("invalid case in uwt_random_get");
@@ -407,7 +407,7 @@ uwt_random_init_nonblock(value unit)
 #endif
   return (Val_long(0));
 
-#elif (defined(__OpenBSD__) && defined(HAVE_GETENTROPY)) || ((defined(__FreeBSD__) || defined(__NetBSD__)) && (defined(CTL_KERN) && defined(KERN_ARND)))
+#elif (defined(__OpenBSD__) && defined(HAVE_GETENTROPY)) || ((defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__NetBSD__)) && (defined(CTL_KERN) && defined(KERN_ARND)))
   unsigned char testbuf[2];
   if ( bsd_sysctl(testbuf,2) == 0 ){
     DEBUG_PF("bsd ok");
@@ -459,7 +459,7 @@ uwt_random_worker(uv_work_t * req)
   unsigned char testbuf[32];
   int fd = -1;
   int r;
-#if defined(__linux__)
+#if defined(__linux__) && !defined(__FreeBSD_kernel__)
   memset(testbuf,0,sizeof testbuf);
   r = from_device(testbuf,sizeof testbuf,"/dev/urandom",&fd,0);
   if ( r == 0 ){
@@ -483,7 +483,7 @@ uwt_random_worker(uv_work_t * req)
     }
 #endif
   }
-#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__NetBSD__) || defined(__OpenBSD__)
   memset(testbuf,0,sizeof testbuf);
   r = from_device(testbuf,sizeof testbuf,"/dev/urandom",&fd,0);
   if ( r == 0 ){
@@ -491,7 +491,7 @@ uwt_random_worker(uv_work_t * req)
     to_use = UWT_RANDOM_URANDOM_DEVICE;
   }
   else {
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
     /* freebsd symlinks /dev/urandom to /dev/random -
        and /dev/random doesn't block */
     memset(testbuf,0,sizeof testbuf);
