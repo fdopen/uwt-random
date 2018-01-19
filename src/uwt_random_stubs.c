@@ -216,15 +216,11 @@ linux_getrandom(void *buf, size_t len, int flag)
 }
 #endif
 
-#if defined(__linux__) && defined(SYS__sysctl)
+#if defined(__linux__) && defined(SYS__sysctl) && defined(CTL_KERN) && defined(KERN_RANDOM) && defined(RANDOM_UUID)
+#define LINUX_SYSCTL_DEFINED 1
 static int
 linux_sysctl(unsigned char *buf, size_t len)
 {
-#if !defined(CTL_KERN) || !defined(KERN_RANDOM) || !defined(RANDOM_UUID)
-  (void)buf;
-  (void)len;
-  return -1;
-#else
   static int mib[] = { CTL_KERN, KERN_RANDOM, RANDOM_UUID };
   size_t i = 0;
   while ( i < len ){
@@ -246,9 +242,8 @@ linux_sysctl(unsigned char *buf, size_t len)
     i += to_read;
   }
   return 0;
-#endif
 }
-#endif /* defined(__linux__) && defined(SYS__sysctl) */
+#endif /* defined(__linux__) && defined(SYS__sysctl) && defined(CTL_KERN) && defined(KERN_RANDOM) && defined(RANDOM_UUID) */
 
 #if (defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__NetBSD__)) && (defined(CTL_KERN) && defined(KERN_ARND))
 static int
@@ -331,7 +326,7 @@ uwt_random_get(value tok, value obytes, value oofset, value olen)
 #endif
       break;
     case 1:
-#if defined(__linux__)
+#if defined(LINUX_SYSCTL_DEFINED) && LINUX_SYSCTL_DEFINED == 1
       r = linux_sysctl(cstr,len);
 #else
       DEBUG_PF("invalid case in uwt_random_get");
@@ -468,7 +463,7 @@ uwt_random_worker(uv_work_t * req)
   }
   else {
     DEBUG_PF("linux /dev/urandom failed");
-#if defined(SYS__sysctl)
+#if defined(LINUX_SYSCTL_DEFINED) && LINUX_SYSCTL_DEFINED == 1
     memset(testbuf,0,sizeof testbuf);
     r = linux_sysctl(testbuf,sizeof testbuf);
     if ( r == 0 ){
